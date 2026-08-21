@@ -12,7 +12,7 @@ export default function App() {
 	const [ error, setError ] = useState( null );
 
 	const [ search, setSearch ] = useState( '' );
-	const [ chapterFilter, setChapterFilter ] = useState( '' );
+	const [ membershipFilter, setMembershipFilter ] = useState( '' );
 	const [ sortBy, setSortBy ] = useState( 'last_name' );
 
 	// Fetch the member list once, when the component first mounts.
@@ -46,15 +46,17 @@ export default function App() {
 			} );
 	}, [] );
 
-	// Build the list of unique chapters for the filter dropdown.
-	// (Only useful once you've added a 'chapter' field — see README.)
-	const chapters = useMemo( () => {
-		const set = new Set( members.map( ( m ) => m.chapter ).filter( Boolean ) );
+	// Build the list of unique membership types for the filter dropdown.
+	// Populated from whatever the REST endpoint returns — no separate wiring.
+	const membershipTypes = useMemo( () => {
+		const set = new Set(
+			members.map( ( m ) => m.membership_type ).filter( Boolean )
+		);
 		return Array.from( set ).sort();
 	}, [ members ] );
 
 	// All the actual filtering/sorting logic lives here. useMemo means
-	// this only re-runs when members/search/chapterFilter/sortBy change,
+	// this only re-runs when members/search/membershipFilter/sortBy change,
 	// not on every render.
 	const filteredMembers = useMemo( () => {
 		let result = members;
@@ -62,14 +64,16 @@ export default function App() {
 		if ( search ) {
 			const term = search.toLowerCase();
 			result = result.filter( ( m ) =>
-				`${ m.first_name } ${ m.last_name } ${ m.job_title || '' }`
+				`${ m.first_name } ${ m.last_name } ${ m.membership_type || '' }`
 					.toLowerCase()
 					.includes( term )
 			);
 		}
 
-		if ( chapterFilter ) {
-			result = result.filter( ( m ) => m.chapter === chapterFilter );
+		if ( membershipFilter ) {
+			result = result.filter(
+				( m ) => m.membership_type === membershipFilter
+			);
 		}
 
 		result = [ ...result ].sort( ( a, b ) =>
@@ -77,7 +81,7 @@ export default function App() {
 		);
 
 		return result;
-	}, [ members, search, chapterFilter, sortBy ] );
+	}, [ members, search, membershipFilter, sortBy ] );
 
 	if ( loading ) {
 		return <p className="yamd-status">Loading directory…</p>;
@@ -92,9 +96,9 @@ export default function App() {
 			<SearchFilterBar
 				search={ search }
 				onSearchChange={ setSearch }
-				chapters={ chapters }
-				chapterFilter={ chapterFilter }
-				onChapterChange={ setChapterFilter }
+				membershipTypes={ membershipTypes }
+				membershipFilter={ membershipFilter }
+				onMembershipChange={ setMembershipFilter }
 				sortBy={ sortBy }
 				onSortChange={ setSortBy }
 			/>

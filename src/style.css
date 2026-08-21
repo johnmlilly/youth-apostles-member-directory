@@ -49,30 +49,76 @@
 }
 
 .yamd-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	border: 1px solid #e5e7eb;
 	border-radius: 10px;
-	padding: 1rem;
+	padding: 1.25rem 1rem;
 	text-align: center;
 	background: #fff;
 }
 
 .yamd-avatar {
-	width: 72px;
-	height: 72px;
+	width: 84px;
+	height: 84px;
 	border-radius: 50%;
 	object-fit: cover;
-	margin-bottom: 0.5rem;
+	margin-bottom: 0.75rem;
 }
 
-.yamd-card h3 {
-	margin: 0.25rem 0;
-	font-size: 1rem;
+/* Shown instead of the photo when a member has no image_url. */
+.yamd-avatar--placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #e5e7eb;
+	color: #6b7280;
+	font-size: 1.6rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	user-select: none;
 }
 
-.yamd-title,
-.yamd-chapter,
-.yamd-phone {
+.yamd-card h3.yamd-name {
+	margin: 0 0 0.35rem;
+	font-size: 1.2rem;
+	font-weight: 700;
+	line-height: 1.25;
+	color: #111827;
+}
+
+.yamd-membership {
+	display: inline-block;
+	margin: 0 0 0.6rem;
+	padding: 0.15rem 0.6rem;
+	border-radius: 999px;
+	background: #eef2ff;
+	color: #3730a3;
+	font-size: 0.78rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.yamd-contact {
+	margin-top: auto;
+}
+
+.yamd-contact p {
 	margin: 0.15rem 0;
 	font-size: 0.85rem;
 	color: #6b7280;
+	word-break: break-word;
+}
+
+.yamd-contact a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.yamd-contact a:hover,
+.yamd-contact a:focus {
+	color: #3730a3;
+	text-decoration: underline;
 }
