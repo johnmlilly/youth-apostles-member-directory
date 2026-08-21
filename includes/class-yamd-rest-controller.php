@@ -113,25 +113,87 @@ class YAMD_REST_Controller {
 			);
 		}
 
-		$members = array();
+		$members     = array();
+		$contact_ids = array();
+
 		foreach ( $results as $r ) {
+			$contact_ids[] = $r['id'];
+
 			$members[] = array(
-				'id'           => $r['id'],
-				'display_name' => $r['display_name'],
-				'first_name'   => $r['first_name'],
-				'last_name'    => $r['last_name'],
-				'job_title'    => $r['job_title'],
-				'image_url'    => $r['image_URL'],
-				'email'        => $r['Email.email'] ?? '',
-				'phone'        => $r['Phone.phone'] ?? '',
-				// 'chapter'   => $r['Membership_Info.Chapter'] ?? '',
+				'id'              => $r['id'],
+				'display_name'    => $r['display_name'],
+				'first_name'      => $r['first_name'],
+				'last_name'       => $r['last_name'],
+				'job_title'       => $r['job_title'],
+				'image_url'       => $r['image_URL'],
+				'email'           => $r['Email.email'] ?? '',
+				'phone'           => $r['Phone.phone'] ?? '',
+				'membership_type' => '',
+				// 'chapter'      => $r['Membership_Info.Chapter'] ?? '',
 			);
 		}
+
+		// Membership lives on CiviCRM's Membership entity, not on Contact,
+		// so it needs its own query. One extra query for the whole list
+		// (rather than one per member) keeps this fast.
+		$memberships = $this->get_membership_types( $contact_ids );
+
+		foreach ( $members as &$member ) {
+			$member['membership_type'] = $memberships[ $member['id'] ] ?? '';
+		}
+		unset( $member ); // Break the reference from the loop above.
 
 		// Cache for 5 minutes so repeat page loads are fast and don't
 		// hammer CiviCRM. Lower this while you're actively testing.
 		set_transient( $cache_key, $members, 5 * MINUTE_IN_SECONDS );
 
 		return rest_ensure_response( $members );
+	}
+
+	/**
+	 * Looks up the current membership type label for a set of contacts.
+	 *
+	 * A contact can hold several memberships (past ones, or more than one
+	 * type at once), so we only consider active-ish statuses and take the
+	 * one furthest in the future — that's the membership worth showing.
+	 *
+	 * @param int[] $contact_ids Contact IDs to look up.
+	 * @return array<int,string> contact_id => membership type label.
+	 */
+	private function get_membership_types( array $contact_ids ) {
+		if ( empty( $contact_ids ) ) {
+			return array();
+		}
+
+		try {
+			$results = \Civi\Api4\Membership::get( TRUE )
+				->addSelect( 'contact_id', 'membership_type_id:label', 'end_date' )
+				->addWhere( 'contact_id', 'IN', $contact_ids )
+				// Statuses that count as "currently a member". Adjust to match
+				// the statuses configured in CiviCRM > Administer >
+				// CiviMember > Membership Status Rules.
+				->addWhere( 'status_id:name', 'IN', array( 'New', 'Current', 'Grace' ) )
+				->addWhere( 'is_test', '=', FALSE )
+				// NULL end_date means a lifetime membership, so sort those first.
+				->addOrderBy( 'end_date', 'DESC' )
+				->setLimit( 0 )
+				->execute();
+		} catch ( \Exception $e ) {
+			// A missing/disabled CiviMember component shouldn't break the
+			// whole directory — just show members without a membership type.
+			return array();
+		}
+
+		$map = array();
+		foreach ( $results as $m ) {
+			$contact_id = $m['contact_id'];
+
+			// First row wins: results are already ordered by end_date DESC.
+			if ( ! isset( $map[ $contact_id ] ) ) {
+				$map[ $contact_id ] = $m['membership_type_id:label'] ?? '';
+			}
+		}
+
+		return $map;
 	}
 }

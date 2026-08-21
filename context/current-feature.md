@@ -30,4 +30,5 @@ List in rough priority order. Move an item to "Current Feature" when work starts
 
 Reverse-chronological log of completed actions/milestones. One line per entry: date, what happened.
 
+- **2026-08-21** — Card redesign + membership wired end-to-end: `MemberCard` now shows photo/initials placeholder → name (dominant) → membership pill → email/phone (clickable `mailto:`/`tel:`); REST controller queries `Membership::get` (active statuses only) and returns `membership_type`; filter dropdown, search, and sort switched from `chapter`/`job_title` to `membership_type`. Untested against real CiviCRM data.
 - **2026-08-10** — Core Member Directory (MVP) shipped: shortcode embed, REST endpoint + CiviCRM query, search/filter/sort, member cards, logged-in-only access, 5-min cache.
