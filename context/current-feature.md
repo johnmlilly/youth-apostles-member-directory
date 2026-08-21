@@ -22,7 +22,7 @@ Update this whenever a feature starts, changes status, or finishes.
 List in rough priority order. Move an item to "Current Feature" when work starts on it.
 
 - [ ] **Chapter custom field wired end-to-end** — CiviCRM field mapping, `MemberCard` display, filter dropdown already scaffolded (see `CLAUDE.md` → "Adding a CiviCRM custom field"), just needs the actual CiviCRM field name and testing against real data.
-- [ ] *(add next planned feature here)*
+- [ ] *Add Print directory option*
 
 ---
 
