@@ -3,7 +3,7 @@
  * Plugin Name: Youth Apostles Member Directory
  * Description: Interactive, searchable member directory powered by CiviCRM data and React.
  * Version: 0.2.0
- * Author: John
+ * Author: John Lilly
  * Text Domain: youth-apostles-member-directory
  *
  * ---------------------------------------------------------------------
@@ -85,7 +85,7 @@ function yamd_enqueue_assets() {
 
 	wp_enqueue_style(
 		'yamd-directory-style',
-		YAMD_PLUGIN_URL . 'build/index.css',
+		YAMD_PLUGIN_URL . 'build/style-index.css',
 		array(),
 		$asset['version']
 	);
