@@ -44,8 +44,20 @@
 
 .yamd-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	grid-template-columns: repeat(4, 1fr);
 	gap: 1.25rem;
+}
+
+@media (max-width: 899px) {
+	.yamd-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 599px) {
+	.yamd-grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 .yamd-card {
@@ -69,15 +81,11 @@
 
 /* Shown instead of the photo when a member has no image_url. */
 .yamd-avatar--placeholder {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: #e5e7eb;
-	color: #6b7280;
-	font-size: 1.6rem;
-	font-weight: 600;
-	letter-spacing: 0.02em;
-	user-select: none;
+	background-color: #e5e7eb;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239ca3af'%3E%3Cpath d='M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.5c-3.3 0-9.9 1.7-9.9 5v2.3c0 .6.4 1 1 1h17.8c.6 0 1-.4 1-1V19.5c0-3.3-6.6-5-9.9-5z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 60%;
 }
 
 .yamd-card h3.yamd-name {

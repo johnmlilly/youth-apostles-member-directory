@@ -1,19 +1,3 @@
-/**
- * Builds the two-letter fallback shown when a member has no photo,
- * e.g. "Ada Lovelace" -> "AL". Falls back to "?" if we have no name.
- */
-function getInitials( member ) {
-	const first = ( member.first_name || '' ).trim();
-	const last = ( member.last_name || '' ).trim();
-
-	if ( first || last ) {
-		return `${ first.charAt( 0 ) }${ last.charAt( 0 ) }`.toUpperCase();
-	}
-
-	const display = ( member.display_name || '' ).trim();
-	return display ? display.charAt( 0 ).toUpperCase() : '?';
-}
-
 export default function MemberCard( { member } ) {
 	// The REST controller may expose this as either key depending on how
 	// the CiviCRM membership field is mapped — accept both.
@@ -28,9 +12,7 @@ export default function MemberCard( { member } ) {
 					className="yamd-avatar"
 				/>
 			) : (
-				<div className="yamd-avatar yamd-avatar--placeholder" aria-hidden="true">
-					{ getInitials( member ) }
-				</div>
+				<div className="yamd-avatar yamd-avatar--placeholder" aria-hidden="true" />
 			) }
 
 			<h3 className="yamd-name">{ member.display_name }</h3>
