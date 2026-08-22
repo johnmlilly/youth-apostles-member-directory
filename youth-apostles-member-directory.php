@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Handy constants so we don't hardcode paths/URLs everywhere.
 define( 'YAMD_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'YAMD_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'YAMD_VERSION', '0.2.0' );
+define( 'YAMD_VERSION', '0.3.0' );
 
 // Pull in the class that defines our REST API endpoint.
 require_once YAMD_PLUGIN_DIR . 'includes/class-yamd-rest-controller.php';
