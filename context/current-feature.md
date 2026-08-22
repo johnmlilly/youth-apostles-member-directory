@@ -7,9 +7,12 @@ Update this whenever a feature starts, changes status, or finishes.
 
 ## Current Feature
 
-**Name:** None in progress
-**Status:** —
-**Goals:** Pick the next item from "Upcoming Features" below.
+**Name:** Card Visual Refresh
+**Status:** Not started
+**Goals:**
+- Restyle `MemberCard` — same primary info shown as today (name, membership, email, phone), no data changes, just a different look
+- Add icons next to the important info fields (e.g. membership, email, phone)
+- Remove the background color on `.yamd-membership` (currently a filled indigo pill) — find a different treatment that doesn't use a solid background fill
 
 ---
 
