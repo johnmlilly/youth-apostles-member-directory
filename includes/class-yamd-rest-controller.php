@@ -196,8 +196,6 @@ class YAMD_REST_Controller {
 				// CiviMember > Membership Status Rules.
 				->addWhere( 'status_id:name', 'IN', array( 'New', 'Current', 'Grace' ) )
 				->addWhere( 'is_test', '=', FALSE )
-				// NULL end_date means a lifetime membership, so sort those first.
-				->addOrderBy( 'end_date', 'DESC' )
 				->setLimit( 0 )
 				->execute();
 		} catch ( \Exception $e ) {
@@ -206,18 +204,35 @@ class YAMD_REST_Controller {
 			return array();
 		}
 
+		// Pick the "best" membership per contact in PHP rather than relying
+		// on SQL ORDER BY: a NULL end_date (lifetime membership) should
+		// always win, and NULL sorts inconsistently across DB engines/
+		// directions (e.g. MySQL puts NULLs last under ORDER BY ... DESC,
+		// not first), so sorting in SQL alone can silently pick the wrong row.
 		$map = array();
 		foreach ( $results as $m ) {
 			$contact_id = $m['contact_id'];
+			$end_date   = $m['end_date'] ?? null;
 
-			// First row wins: results are already ordered by end_date DESC.
-			if ( ! isset( $map[ $contact_id ] ) ) {
+			$is_better = ! isset( $map[ $contact_id ] )
+				|| ( null === $end_date && null !== $map[ $contact_id ]['end_date'] )
+				|| ( null !== $end_date && null !== $map[ $contact_id ]['end_date'] && $end_date > $map[ $contact_id ]['end_date'] );
+
+			if ( $is_better ) {
 				$map[ $contact_id ] = array(
 					'type'      => $m['membership_type_id:label'] ?? '',
 					'join_date' => $m['join_date'] ?? '',
+					'end_date'  => $end_date,
 				);
 			}
 		}
+
+		// Drop the internal end_date now that comparisons are done — callers
+		// only expect 'type' and 'join_date'.
+		foreach ( $map as &$data ) {
+			unset( $data['end_date'] );
+		}
+		unset( $data );
 
 		return $map;
 	}
@@ -310,6 +325,11 @@ class YAMD_REST_Controller {
 	 * Batched contact_id => display_name lookup, used to resolve the
 	 * "other side" of each relationship without an N+1 query per member.
 	 *
+	 * Unlike the main member query, this deliberately does NOT filter to
+	 * contact_type = 'Individual' — a relationship's other side is often an
+	 * Organization or Household (e.g. "Employee of"), and excluding those
+	 * would silently drop valid relationship names.
+	 *
 	 * @param int[] $contact_ids Contact IDs to look up.
 	 * @return array<int,string> contact_id => display name.
 	 */
@@ -322,6 +342,7 @@ class YAMD_REST_Controller {
 			$results = \Civi\Api4\Contact::get( TRUE )
 				->addSelect( 'id', 'display_name' )
 				->addWhere( 'id', 'IN', $contact_ids )
+				->addWhere( 'is_deleted', '=', FALSE )
 				->setLimit( 0 )
 				->execute();
 		} catch ( \Exception $e ) {
