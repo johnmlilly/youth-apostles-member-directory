@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client';
+import ReactModal from 'react-modal';
 import App from './App';
 import './style.css';
 
@@ -10,6 +11,11 @@ import './style.css';
 document.addEventListener( 'DOMContentLoaded', () => {
 	const rootEl = document.getElementById( 'yamd-directory-root' );
 	if ( rootEl ) {
+		// Tells react-modal which element is the "app root" so it can mark
+		// everything else aria-hidden while a modal is open. Without this it
+		// logs a console warning and skips that accessibility behavior.
+		ReactModal.setAppElement( rootEl );
+
 		const root = createRoot( rootEl );
 		root.render( <App /> );
 	}
