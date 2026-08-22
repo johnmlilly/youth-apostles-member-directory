@@ -102,7 +102,16 @@ export default function App() {
 				sortBy={ sortBy }
 				onSortChange={ setSortBy }
 			/>
-			<p className="yamd-count">{ filteredMembers.length } members</p>
+			<div className="yamd-toolbar">
+				<p className="yamd-count">{ filteredMembers.length } members</p>
+				<button
+					type="button"
+					className="yamd-print-button"
+					onClick={ () => window.print() }
+				>
+					Print Directory
+				</button>
+			</div>
 			<div className="yamd-grid">
 				{ filteredMembers.map( ( m ) => (
 					<MemberCard key={ m.id } member={ m } />
