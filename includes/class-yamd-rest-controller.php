@@ -92,13 +92,20 @@ class YAMD_REST_Controller {
 					'job_title',
 					'image_URL',
 					'Email.email',
-					'Phone.phone'
+					'Phone.phone',
+					'Address.street_address',
+					'Address.supplemental_address_1',
+					'Address.city',
+					'Address.state_province_id:label',
+					'Address.postal_code',
+					'Address.country_id:label'
 					// Example custom field select — uncomment and rename
 					// once you know your actual custom group/field names:
 					// 'Membership_Info.Chapter',
 				)
 				->addJoin( 'Email AS email', 'LEFT', array( 'email.is_primary', '=', TRUE ) )
 				->addJoin( 'Phone AS phone', 'LEFT', array( 'phone.is_primary', '=', TRUE ) )
+				->addJoin( 'Address AS address', 'LEFT', array( 'address.is_primary', '=', TRUE ) )
 				->addWhere( 'is_deleted', '=', FALSE )
 				->addWhere( 'contact_type', '=', 'Individual' )
 				->addWhere( 'groups', 'IN', array( self::MEMBERS_GROUP_ID ) )
@@ -129,17 +136,32 @@ class YAMD_REST_Controller {
 				'email'           => $r['Email.email'] ?? '',
 				'phone'           => $r['Phone.phone'] ?? '',
 				'membership_type' => '',
+				'member_since'    => '',
+				'address'         => array(
+					'street'      => $r['Address.street_address'] ?? '',
+					'street2'     => $r['Address.supplemental_address_1'] ?? '',
+					'city'        => $r['Address.city'] ?? '',
+					'state'       => $r['Address.state_province_id:label'] ?? '',
+					'postal_code' => $r['Address.postal_code'] ?? '',
+					'country'     => $r['Address.country_id:label'] ?? '',
+				),
+				'relationships'   => array(),
 				// 'chapter'      => $r['Membership_Info.Chapter'] ?? '',
 			);
 		}
 
-		// Membership lives on CiviCRM's Membership entity, not on Contact,
-		// so it needs its own query. One extra query for the whole list
-		// (rather than one per member) keeps this fast.
-		$memberships = $this->get_membership_types( $contact_ids );
+		// Membership and relationships live on their own CiviCRM entities,
+		// not on Contact, so they each need their own query. One extra
+		// query per entity for the whole list (rather than one per member)
+		// keeps this fast.
+		$membership_data = $this->get_membership_data( $contact_ids );
+		$relationships   = $this->get_relationships( $contact_ids );
 
 		foreach ( $members as &$member ) {
-			$member['membership_type'] = $memberships[ $member['id'] ] ?? '';
+			$data                      = $membership_data[ $member['id'] ] ?? array();
+			$member['membership_type'] = $data['type'] ?? '';
+			$member['member_since']    = $data['join_date'] ?? '';
+			$member['relationships']   = $relationships[ $member['id'] ] ?? array();
 		}
 		unset( $member ); // Break the reference from the loop above.
 
@@ -151,23 +173,23 @@ class YAMD_REST_Controller {
 	}
 
 	/**
-	 * Looks up the current membership type label for a set of contacts.
+	 * Looks up the current membership type + join date for a set of contacts.
 	 *
 	 * A contact can hold several memberships (past ones, or more than one
 	 * type at once), so we only consider active-ish statuses and take the
 	 * one furthest in the future — that's the membership worth showing.
 	 *
 	 * @param int[] $contact_ids Contact IDs to look up.
-	 * @return array<int,string> contact_id => membership type label.
+	 * @return array<int,array{type:string,join_date:string}> contact_id => membership data.
 	 */
-	private function get_membership_types( array $contact_ids ) {
+	private function get_membership_data( array $contact_ids ) {
 		if ( empty( $contact_ids ) ) {
 			return array();
 		}
 
 		try {
 			$results = \Civi\Api4\Membership::get( TRUE )
-				->addSelect( 'contact_id', 'membership_type_id:label', 'end_date' )
+				->addSelect( 'contact_id', 'membership_type_id:label', 'join_date', 'end_date' )
 				->addWhere( 'contact_id', 'IN', $contact_ids )
 				// Statuses that count as "currently a member". Adjust to match
 				// the statuses configured in CiviCRM > Administer >
@@ -190,8 +212,125 @@ class YAMD_REST_Controller {
 
 			// First row wins: results are already ordered by end_date DESC.
 			if ( ! isset( $map[ $contact_id ] ) ) {
-				$map[ $contact_id ] = $m['membership_type_id:label'] ?? '';
+				$map[ $contact_id ] = array(
+					'type'      => $m['membership_type_id:label'] ?? '',
+					'join_date' => $m['join_date'] ?? '',
+				);
 			}
+		}
+
+		return $map;
+	}
+
+	/**
+	 * Looks up active relationships (spouse, parent, etc.) for a set of
+	 * contacts, from the contact's own perspective.
+	 *
+	 * CiviCRM relationships are directional rows shared by two contacts
+	 * (contact_id_a / contact_id_b), so a contact in our list can appear on
+	 * either side of a given row. relationship_type_id.label_a_b always
+	 * describes contact_id_a's role relative to contact_id_b (e.g. "Parent
+	 * of"), so which label we use depends on which side our member is on.
+	 *
+	 * @param int[] $contact_ids Contact IDs to look up.
+	 * @return array<int,array<int,array{type:string,name:string}>> contact_id => list of relationships.
+	 */
+	private function get_relationships( array $contact_ids ) {
+		if ( empty( $contact_ids ) ) {
+			return array();
+		}
+
+		try {
+			$results = \Civi\Api4\Relationship::get( TRUE )
+				->addSelect(
+					'contact_id_a',
+					'contact_id_b',
+					'relationship_type_id.label_a_b',
+					'relationship_type_id.label_b_a',
+					'is_active',
+					'end_date'
+				)
+				->addClause( 'OR', array( 'contact_id_a', 'IN', $contact_ids ), array( 'contact_id_b', 'IN', $contact_ids ) )
+				->addWhere( 'is_active', '=', TRUE )
+				->setLimit( 0 )
+				->execute();
+		} catch ( \Exception $e ) {
+			// A missing/misconfigured Relationship setup shouldn't break the
+			// whole directory — just show members without relationships.
+			return array();
+		}
+
+		$today              = current_time( 'Y-m-d' );
+		$contact_id_lookup  = array_flip( $contact_ids );
+		$by_member          = array();
+		$related_contact_id = array();
+
+		foreach ( $results as $rel ) {
+			// is_active alone doesn't guarantee "not expired" unless a
+			// CiviCRM scheduled job has run recently — also check end_date.
+			if ( ! empty( $rel['end_date'] ) && $rel['end_date'] < $today ) {
+				continue;
+			}
+
+			$a = $rel['contact_id_a'];
+			$b = $rel['contact_id_b'];
+
+			if ( isset( $contact_id_lookup[ $a ] ) ) {
+				$by_member[ $a ][] = array(
+					'type'               => $rel['relationship_type_id.label_a_b'] ?? '',
+					'related_contact_id' => $b,
+				);
+				$related_contact_id[] = $b;
+			}
+
+			if ( isset( $contact_id_lookup[ $b ] ) ) {
+				$by_member[ $b ][] = array(
+					'type'               => $rel['relationship_type_id.label_b_a'] ?? '',
+					'related_contact_id' => $a,
+				);
+				$related_contact_id[] = $a;
+			}
+		}
+
+		$names = $this->get_contact_names( array_unique( $related_contact_id ) );
+
+		foreach ( $by_member as &$rels ) {
+			foreach ( $rels as &$rel ) {
+				$rel['name'] = $names[ $rel['related_contact_id'] ] ?? '';
+				unset( $rel['related_contact_id'] );
+			}
+			unset( $rel );
+		}
+		unset( $rels );
+
+		return $by_member;
+	}
+
+	/**
+	 * Batched contact_id => display_name lookup, used to resolve the
+	 * "other side" of each relationship without an N+1 query per member.
+	 *
+	 * @param int[] $contact_ids Contact IDs to look up.
+	 * @return array<int,string> contact_id => display name.
+	 */
+	private function get_contact_names( array $contact_ids ) {
+		if ( empty( $contact_ids ) ) {
+			return array();
+		}
+
+		try {
+			$results = \Civi\Api4\Contact::get( TRUE )
+				->addSelect( 'id', 'display_name' )
+				->addWhere( 'id', 'IN', $contact_ids )
+				->setLimit( 0 )
+				->execute();
+		} catch ( \Exception $e ) {
+			return array();
+		}
+
+		$map = array();
+		foreach ( $results as $c ) {
+			$map[ $c['id'] ] = $c['display_name'];
 		}
 
 		return $map;
