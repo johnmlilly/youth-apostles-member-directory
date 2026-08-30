@@ -87,7 +87,10 @@ Follow WordPress PHP coding standards, which is what the existing files do.
 - Every class is `yamd-` prefixed to avoid colliding with the host theme
 - BEM-style double-dash for modifiers - `.yamd-avatar--placeholder`
 - Mobile handled with `max-width` media queries at 899px and 599px
-- Indigo `#3730a3` on `#eef2ff` is the single accent. Grays are the Tailwind
+- Navy `#152b5c` on the derived tint `#eceef2` is the single accent, from the
+  2025 brand guide in `blueprint/reference/`. Gold `#998631` is the brand's
+  secondary color and is deliberately unused in the app so far. Grays are the
+  Tailwind
   neutral ramp by value (`#111827`, `#6b7280`, `#d1d5db`, `#e5e7eb`), used
   directly as hex.
 - Keep the `@media print` block working. Anything new and interactive that is

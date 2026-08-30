@@ -9,9 +9,8 @@
 
 ## Shipped (pre-Blueprint)
 
-These landed before the Blueprint was adopted, so they have no archived spec
-under `blueprint/history/features/`. The dated notes in
-`blueprint/context/current-feature.md` are their record.
+These landed before the Blueprint was adopted, so they have no individual spec.
+Their record is `blueprint/history/features/00-pre-blueprint-log.md`.
 
 - [x] 1. **Core member directory** - shortcode embed, login-gated REST endpoint,
   CiviCRM APIv4 query, client-side search/filter/sort, member cards, 5 minute

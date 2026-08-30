@@ -182,8 +182,10 @@ lines, then the details button pinned to the bottom.
 
 Conventions:
 
-- **Palette** - neutral grays on white, with indigo (`#3730a3` on `#eef2ff`) as
-  the single accent for interactive and emphasized elements
+- **Palette** - neutral grays on white, with brand navy (`#152b5c` on the
+  derived tint `#eceef2`) as the single accent for interactive and emphasized
+  elements, from the 2025 brand guide in `blueprint/reference/`. The brand's
+  secondary gold (`#998631`) is not used in the app yet.
 - **Feedback** - plain text for loading and error states, no spinners
 - **Print** - a real output, not an afterthought. Anything new and interactive
   needs a matching hide rule in the `@media print` block.

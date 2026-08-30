@@ -114,8 +114,10 @@ being taught anything.
   responsive card grid (4 columns, 2 under 900px, 1 under 600px)
 - **Card** - centered column: round avatar, name as the dominant element,
   membership, then contact lines, with the details button pinned to the bottom
-- **Palette** - neutral grays on white, indigo (`#3730a3` on `#eef2ff`) as the
-  single accent for interactive and emphasized elements
+- **Palette** - neutral grays on white, brand navy (`#152b5c` on the derived
+  tint `#eceef2`) as the single accent for interactive and emphasized elements.
+  From the 2025 brand guide, kept in `blueprint/reference/`. The brand's
+  secondary gold (`#998631`) is not used in the app yet.
 - **Feedback** - plain text states for loading and errors, no spinners
 - **Print** - treated as a real output, not an afterthought
 
