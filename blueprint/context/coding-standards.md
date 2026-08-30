@@ -152,22 +152,44 @@ an unbuilt change looks like no change at all.
 
 ## Comments
 
-Write code that explains itself; comment only what the code cannot say.
+**This codebase teaches.** It was written while learning WordPress plugin
+development and CiviCRM, and the comments are part of the product: a future
+reader (often the author, months later) should be able to understand not just
+what the code does but how the platform underneath it works. New code matches
+that, so it reads consistently with its neighbors.
 
-- Comment the **why**, not the **what**. Delete any comment that restates the
-  code.
-- No banner blocks, section dividers, or step-by-step narration of obvious code.
-- A comment earns its place when it captures something the code cannot: a
-  non-obvious decision, a gotcha or workaround, why a value is what it is.
-- Prefer self-documenting names and small functions over explanatory comments.
-- Keep doc comments minimal. A one-line purpose on an exported function is plenty.
+This is a deliberate departure from the usual "comment only the why" rule.
 
-> TODO (confirm): the existing files do not follow this. They carry long
-> teaching-style comment blocks explaining how WordPress plugins, hooks,
-> shortcodes, and the REST API work, written while learning the platform. Decide
-> which way to go: keep them as intentional onboarding documentation and let new
-> code match, or treat them as legacy and hold new code to the rule above. Right
-> now new code following this section will look inconsistent with its neighbors.
+### What to explain
+
+- **Platform mechanics.** How WordPress or CiviCRM actually behaves, especially
+  where it is implicit or magic. Why `rest_api_init` is the right hook, what the
+  plugin header block does, how a shortcode gets replaced, why `build/index.asset.php`
+  exists, what a nonce proves, what a transient is.
+- **Non-obvious decisions and gotchas.** Keep every one of these. They are the
+  highest-value comments in the codebase: the NULL `end_date` tie-break done in
+  PHP rather than SQL, the local-versus-UTC date parsing in `formatDate`, the
+  deliberately missing `contact_type` filter in `get_contact_names()`, the
+  `MODAL_STYLE_OVERRIDE` that exists to beat `react-modal`'s inline styles.
+- **Orientation.** A file-level block saying what the file is for and where it
+  sits in the request flow, as `class-yamd-rest-controller.php` does.
+- **Where to go next.** Pointers a reader can act on, like using the CiviCRM API4
+  Explorer to find a custom field name.
+
+### What still does not earn a comment
+
+Teaching style is not a license for noise.
+
+- Do not explain the JavaScript or PHP language itself. A reader knows what
+  `map`, `filter`, and `foreach` do. Explain CiviCRM's relationship direction
+  model instead.
+- Do not restate the line below it. `// Set loading to false` adds nothing.
+- Do not leave a comment that has drifted from the code. A wrong explanation is
+  worse than none, so update comments in the same edit that changes the code.
+- Prefer a clear name over a comment that compensates for an unclear one.
+
+The test: would this comment save a reader a trip to the WordPress or CiviCRM
+docs? If yes, write it. If it only restates the syntax in front of them, cut it.
 
 ## Writing
 
