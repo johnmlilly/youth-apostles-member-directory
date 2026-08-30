@@ -1,180 +1,178 @@
 # Coding Standards
 
-> Your conventions. Edit these once to match your stack. The defaults below
-> assume Next.js + TypeScript + Tailwind + Prisma; change or trim anything that
-> doesn't fit your project.
->
-> Run `/onboard` after installing the Blueprint. It tunes this file to the real
-> project stack, along with `AGENTS.md`, `CLAUDE.md` when present,
-> `ai-interaction.md`, `.gitignore`, and README placement. Review the result
-> before `/overview`.
+> Rewritten by `/adopt` to match the conventions this codebase actually uses, not
+> a default template. Edit freely; this file is yours.
 
-## TypeScript
+## Stack
 
-- Strict mode enabled
-- No `any` types - use proper typing or `unknown`
-- Define interfaces for all props, API responses, and data models
-- Use type inference where obvious, explicit types where helpful
+A WordPress plugin. React front end built by `@wordpress/scripts`, PHP REST
+controller, CiviCRM APIv4 as the data source. npm is the package manager. There
+is no framework beyond WordPress itself, no state library, and no CSS framework.
+
+## Formatting
+
+- **Tabs for indentation**, in PHP, JS, and CSS alike
+- WordPress JS spacing: spaces inside parens and braces - `( a, b )`,
+  `{ member }`, `useState( '' )`
+- Single quotes in JS and PHP
+- Trailing commas in multi-line arrays and arguments
+
+Match the surrounding file. `wp-scripts` ships an ESLint config, but no lint
+script is wired up, so formatting is by convention rather than enforced.
+
+## PHP
+
+Follow WordPress PHP coding standards, which is what the existing files do.
+
+- Guard every file with `if ( ! defined( 'ABSPATH' ) ) { exit; }`
+- `array()` long syntax, not `[]`
+- Yoda conditions for comparisons against literals - `false !== $cached`
+- snake_case functions and variables, `YAMD_`-prefixed constants, `YAMD_`-prefixed
+  classes
+- Class files are named `class-yamd-*.php` under `includes/`
+- Escape on output: `esc_url_raw`, `esc_html`, and friends
+- Return `WP_Error` with an explicit `array( 'status' => 4xx|5xx )` for failures,
+  never a bare `false` or a silent empty array
+- Wrap every CiviCRM API call in try/catch. A missing or misconfigured CiviCRM
+  component should degrade the directory, not break it: the membership and
+  relationship lookups both return an empty map on exception so members still
+  render.
+
+## CiviCRM access
+
+- Call CiviCRM's PHP API in-process (`\Civi\Api4\Entity::get( TRUE )`). Never use
+  the external REST API and never introduce an API key.
+- Call `civicrm_initialize()` before touching any `\Civi\` class, and check
+  `function_exists( 'civicrm_initialize' )` first.
+- **Batch, never N+1.** Entities that do not live on `Contact` (memberships,
+  relationships, related contact names) each get one query for the whole member
+  list, keyed by contact id, then merged in PHP.
+- **Do not rely on SQL ordering for correctness.** The membership tie-break picks
+  the best row in PHP specifically because a NULL `end_date` (a lifetime
+  membership) must win, and NULL sorting differs across database engines. A past
+  bug came from exactly this.
+- Filter `is_deleted` and `is_test` consistently. Note the one deliberate
+  exception: `get_contact_names()` skips the `contact_type = 'Individual'` filter,
+  because the other side of a relationship is often an Organization or Household.
+- Find unknown custom field names with the CiviCRM API4 Explorer before writing
+  the select, rather than guessing at `Group.Field`.
 
 ## React
 
-- Functional components only (no class components)
-- Use hooks for state and side effects
-- Keep components focused - one job per component
-- Extract reusable logic into custom hooks
+- Function components with hooks only
+- One component per file under `src/components/`, PascalCase filename matching the
+  default export
+- State is held in `App` and passed down as props. There is no context, reducer,
+  or state library, and adding one is a decision, not an implementation detail.
+- Derived data (filter options, the filtered and sorted list) goes in `useMemo`
+  with an accurate dependency array
+- Data is fetched once on mount in `App`, then all searching, filtering, and
+  sorting happens client-side over the full list
+- Send `X-WP-Nonce` on every request to the plugin's own REST routes
+- Handle the three render states explicitly: loading, error, then content
 
-## Next.js
+## WordPress integration
 
-- Server components by default
-- Only use `'use client'` when needed (interactivity, hooks, browser APIs)
-- Use Server Actions for form submissions and simple mutations
-- Use API routes when you need:
-  - Webhooks (Clerk, GitHub, etc.)
-  - File uploads with progress tracking
-  - Long-running operations
-  - Specific HTTP status codes or headers
-  - Endpoints for future mobile/CLI clients
-  - Third-party integrations
-- Otherwise, fetch data directly in server components
-- Dynamic routes for item/collection pages
-
-## File Organization
-
-- Components: `src/components/[feature]/ComponentName.tsx`
-- Pages: `src/app/[route]/page.tsx`
-- Server Actions: `src/actions/[feature].ts`
-- Types: `src/types/[feature].ts`
-- Lib/Utils: `src/lib/[utility].ts`
-
-## Naming
-
-- Components: PascalCase (`ItemCard.tsx`)
-- Files: Match component name or kebab-case
-- Functions: camelCase
-- Constants: SCREAMING_SNAKE_CASE
-- Types/Interfaces: PascalCase (no prefix)
+- Enqueue assets only from the shortcode render, never site-wide
+- Read the generated `build/index.asset.php` for dependencies and the version
+  hash; bail early if it is missing, since that means the build has not been run
+- Pass PHP values to JS through `wp_localize_script`, not inline script tags
+- Bump the version in three places together when releasing: the plugin header
+  docblock, the `YAMD_VERSION` constant, and `package.json`
 
 ## Styling
 
-- Tailwind CSS for all styling
-- Tailwind v4: CSS-first config (`@theme` in `globals.css`), no `tailwind.config.js`
-- Use shadcn/ui components where applicable
-- No inline styles
-- Dark mode first, light mode as option
+- One hand-written `src/style.css`. No preprocessor, no CSS-in-JS, no Tailwind.
+- Every class is `yamd-` prefixed to avoid colliding with the host theme
+- BEM-style double-dash for modifiers - `.yamd-avatar--placeholder`
+- Mobile handled with `max-width` media queries at 899px and 599px
+- Indigo `#3730a3` on `#eef2ff` is the single accent. Grays are the Tailwind
+  neutral ramp by value (`#111827`, `#6b7280`, `#d1d5db`, `#e5e7eb`), used
+  directly as hex.
+- Keep the `@media print` block working. Anything new and interactive that is
+  added to the page needs a matching hide rule there.
+- No inline styles. The one `MODAL_STYLE_OVERRIDE` in `MemberCard` exists solely
+  to blank out `react-modal`'s injected inline defaults so the stylesheet wins.
 
-## Database
+## Types
 
-- Use Prisma ORM for all database operations
-- Always use `prisma migrate dev` for schema changes (not `db push`)
-- Run `prisma migrate status` before committing to verify migrations are in sync
-- Production deployments must run `prisma migrate deploy` before the app starts
+> TODO (confirm): aspirational until build item 6 lands. Today every file is
+> plain `.js` with JSX and there is no type checking at all.
 
-## Data Fetching
+Once the TypeScript migration is done:
 
-- Server components fetch directly with Prisma
-- Client components use Server Actions
-- Validate all inputs with Zod
-- Scope every user-owned query by the authenticated Clerk user id (`clerkUserId`); never trust a client-supplied user id
-
-## Error Handling
-
-- Use try/catch in Server Actions
-- Return `{ success, data, error }` pattern from actions
-- Display user-friendly error messages via toast
+- `strict: true`, no `any`; use `unknown` and narrow
+- The REST payload shape (`Member`, `Address`, `Relationship`) is defined once and
+  imported, not re-declared per component
+- Component props get an explicit interface
+- PHP stays untyped and unanalyzed by decision. Do not add PHPStan, Psalm, or
+  PHPUnit without asking.
 
 ## Testing
 
-The blueprint installs no test runner; testing is opt-in at the project level,
-because the overlay can't know your stack. Adding unit testing is an explicit
-setup task the AI can do through the normal workflow, either as a build-plan item
-or with `/tests`. The setup should choose the stack-native runner, wire the
-scripts or commands, add a small example test, and update the Commands section
-of `AGENTS.md`.
+**No test runner is configured, so there is no test gate right now.** The switch
+is a `test` command in the Commands section of `AGENTS.md`. It is absent, which
+means the loop verifies logic with the evidence it already has: `npm run build`
+succeeding, and the directory rendering in a real browser on a page carrying the
+shortcode.
 
-When `AGENTS.md` declares a `Verify` command, treat it as the umbrella automated
-gate. It combines only the checks this project actually has, in this order when
-available: typecheck, tests, then build. The command does not enable an absent
-test runner or replace focused evidence. It gives local work and optional CI one
-exact command to run. `/ci` owns Verify and CI setup. `/tests` adds the real test
-command to Verify when it already exists, but never creates CI only because
-testing was configured.
+Build item 7 turns this on through `/tests`. Do not install a runner in the
+middle of an unrelated feature.
 
-**The opt-in switch is one signal: a `test` command in the Commands section of
-`AGENTS.md`.** Declare one and **tests become a gate for logic-bearing steps**,
-not an optional extra; leave it out and the loop verifies logic with the evidence
-it already uses (run it, a screenshot, the build). Adding the runner is itself a
-deliberate step, never a silent mid-step install. This is the single definition
-of the switch; the skills and `ai-interaction.md` only point back here.
+When the gate is on, the scope rule is the usual one:
 
-- **What to test (the scope rule):** pure logic where a wrong answer is possible -
-  parsers, formatters, validators, id/slug builders, server actions. These have
-  assertable inputs and outputs and real edge cases (empty, missing, malformed).
-- **What not to test:** UI components and integration-level surfaces (render or
-  export routes, anything driving a real browser or external service). Verify those
-  with a screenshot and the build, not brittle unit tests.
-- **The gate (when a runner is configured):** a build step that adds in-scope logic
-  must ship a passing test in the same reviewable diff. The project's test command
-  must be green before the step is approved, before any checkpoint commit, and
-  before `/complete` merges. UI and integration-only steps are exempt and ride on
-  screenshot plus build evidence.
-- **When it's named:** the `/feature` spec's Testing section predicts the coverage,
-  `/implement` writes the test with the step, and if a step surfaces logic the spec
-  didn't foresee, add a focused test then.
-- An empty suite should fail, not pass, so "no tests ran" never looks like "passed".
-- Test files live next to source files (for example `feature.test.ts`).
-- Run them via the project's test command (see Commands in `AGENTS.md`), not a
-  hardcoded tool name.
+- **Test** pure logic where a wrong answer is possible. In this codebase that
+  means `formatDate` (the local-versus-UTC parsing that exists to dodge an
+  off-by-one day) and the search, filter, and sort derivation in `App`.
+- **Do not test** rendering, the modal, or anything that would need a live
+  WordPress or CiviCRM instance. Verify those with the browser and the build.
+- An empty suite must fail, not pass.
+- Test files sit next to their source - `formatDate.test.ts` beside the module.
 
-Stack binding (swap for yours): a TypeScript app uses Vitest, `vi.mock()` for
-external dependencies (Prisma, Clerk, etc.), and `vi.useFakeTimers()` for
-time-dependent logic; a Python app would use pytest; a Go app `go test`.
+Browser testing is separately opt-in through `/browser-tests`. Nothing is
+installed today. Until then, UI evidence means loading the shortcode page while
+logged in and looking at it, including a print preview for anything that changes
+layout.
 
-## Browser Verification
+## Verification
 
-For UI and integration behavior, prefer real browser evidence over reading the
-code and assuming it works.
-
-- Browser automation is separately opt-in through `/browser-tests`. That setup
-  reuses a compatible runner or prefers Playwright for supported projects, then
-  documents the exact command as `Browser tests` in `AGENTS.md`.
-- When `Browser tests` is declared, add focused coverage for stable behavioral
-  done-whens when it is proportionate, and run the documented command during
-  `/check`. Do not assume it proves visual fidelity, real authenticated-profile
-  behavior, browser chrome, or another claim the test does not observe.
-- If no Browser tests command is declared, do not add a runner silently in the
-  middle of an unrelated feature. Use the available dev server, browser
-  screenshots, build output, API output, or manual evidence instead.
-- Browser tests are not part of the default Verify command or CI unless the user
-  separately chooses that slower gate.
-- Browser evidence is especially important for flows that click, type, submit,
-  navigate, download files, render complex layouts, or depend on client-side
-  state.
+There is no `Verify` command and no CI. The real gate is `npm run build`. Run it
+after any change under `src/`, because WordPress serves `build/`, not `src/`, so
+an unbuilt change looks like no change at all.
 
 ## Code Quality
 
-- No commented-out code unless specified
+- No commented-out code, with one deliberate exception: the chapter custom-field
+  lines in the REST controller are intentionally left commented as the documented
+  extension point, and the README points at them. Remove them when build item 8
+  wires the field for real.
 - No unused imports or variables
-- Keep functions under 50 lines when possible
+- Keep functions under 50 lines where practical
 
 ## Comments
 
 Write code that explains itself; comment only what the code cannot say.
-Over-commenting is a common AI tell, so resist it.
 
-- Comment the **why**, not the **what**. Delete any comment that restates the code.
-- No banner/header blocks, section dividers, or step-by-step narration of obvious
-  code. A file does not need a comment announcing each region.
-- A comment earns its place only when it captures something the code can't: a
-  non-obvious decision, a gotcha or workaround, why a value is what it is, or a
-  link to a spec or issue.
+- Comment the **why**, not the **what**. Delete any comment that restates the
+  code.
+- No banner blocks, section dividers, or step-by-step narration of obvious code.
+- A comment earns its place when it captures something the code cannot: a
+  non-obvious decision, a gotcha or workaround, why a value is what it is.
 - Prefer self-documenting names and small functions over explanatory comments.
-- Keep doc comments minimal: a one-line purpose on an exported type or function is
-  plenty; don't write JSDoc that just repeats the signature.
-- When in doubt, leave the comment out.
+- Keep doc comments minimal. A one-line purpose on an exported function is plenty.
+
+> TODO (confirm): the existing files do not follow this. They carry long
+> teaching-style comment blocks explaining how WordPress plugins, hooks,
+> shortcodes, and the REST API work, written while learning the platform. Decide
+> which way to go: keep them as intentional onboarding documentation and let new
+> code match, or treat them as legacy and hold new code to the rule above. Right
+> now new code following this section will look inconsistent with its neighbors.
 
 ## Writing
 
-- No em dashes (U+2014) in generated content: docs, comments, commit messages,
-  READMEs, specs. They read as AI-generated.
+- No em dashes in generated content: docs, comments, commit messages, READMEs,
+  specs. They read as AI-generated.
 - Use a hyphen for `term - description` separators; rephrase prose with commas,
   parentheses, or a colon. Avoid en dashes and the ellipsis character too.
+- Note that the existing README and the pre-Blueprint history notes do use em
+  dashes. The rule applies going forward rather than as a cleanup task.

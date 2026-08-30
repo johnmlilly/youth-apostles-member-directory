@@ -7,7 +7,10 @@ this file, so there is a single source of truth.
 
 ## What this is
 
-A description of your project and the problem it solves.
+A WordPress plugin that renders an interactive, searchable member directory for
+Youth Apostles, reading live from CiviCRM. A `[youth_apostles_directory]`
+shortcode mounts a React app that fetches a login-gated REST endpoint, which
+queries CiviCRM's APIv4 in-process and returns the member list as JSON.
 
 This project is built with the **AI Blueprint**, a workflow layer, not an
 app skeleton. To start a new project, scaffold the app first in an empty folder
@@ -191,19 +194,41 @@ checks do not make the Blueprint unusable.
 
 ## Commands
 
-<!-- blueprint:onboarding-required -->
-For a standard Next.js project. Change or remove if you're using something else.
+- Build: `npm run build` (compiles `src/` to `build/` via `@wordpress/scripts`)
+- Watch: `npm run start` (rebuilds on change while developing)
+- Install: `npm install`
 
-- Dev server: `npm run dev` (http://localhost:3000)
-- Build: `npm run build`
-- Production server: `npm run start`
-- Lint: `npm run lint`
+There is no dev server. This is a WordPress plugin, not a standalone app, so it
+runs inside a WordPress install that also has CiviCRM active. To see a change,
+run `npm run build` and reload a page containing the `[youth_apostles_directory]`
+shortcode while logged in. WordPress serves `build/`, never `src/`, so an unbuilt
+change looks like no change at all.
 
-Testing is opt-in. If this project does not already have a unit test runner, run
-`/tests` or `$tests` to add one and update this section with the real test
-commands.
+- Lint: none configured. `wp-scripts` provides `lint-js` and `lint-style`, but no
+  script is wired up.
+- Typecheck: none configured. Planned as build item 6.
+- Test: none configured. Planned as build item 7.
+- Verify: none configured. `npm run build` is the real gate today.
 
-Browser testing is also opt-in. Run `/browser-tests` or `$browser-tests` to add
-or normalize a browser harness and document its exact command as `Browser
-tests`. Check and Continuous Mode can then reuse it without installing tooling
-mid-feature.
+Testing is opt-in and is not yet set up here, so there is no test gate. The
+switch is a `test` command in this section. Run `/tests` or `$tests` to add a
+runner and record the real command.
+
+Browser testing is also opt-in and not set up. Run `/browser-tests` or
+`$browser-tests` to add or normalize a browser harness and document its exact
+command as `Browser tests`. Check and Continuous Mode can then reuse it without
+installing tooling mid-feature.
+
+## Release
+
+No CI/CD. Releases are a manual zip upload through WordPress Admin:
+
+1. `npm install && npm run build`
+2. Zip the plugin folder **including `build/`** (it is gitignored, so a plain
+   clone is not installable)
+3. WordPress Admin > Plugins > Add New > Upload Plugin, then activate
+4. Confirm the directory page still renders while logged in
+
+Bump the version in all three places together: the plugin header docblock, the
+`YAMD_VERSION` constant in `youth-apostles-member-directory.php`, and
+`package.json`.
