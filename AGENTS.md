@@ -229,6 +229,8 @@ No CI/CD. Releases are a manual zip upload through WordPress Admin:
 3. WordPress Admin > Plugins > Add New > Upload Plugin, then activate
 4. Confirm the directory page still renders while logged in
 
-Bump the version in all three places together: the plugin header docblock, the
-`YAMD_VERSION` constant in `youth-apostles-member-directory.php`, and
-`package.json`.
+Bump the version with `npm version patch` (or `minor` / `major`). An npm
+`version` lifecycle script runs `scripts/sync-version.mjs`, which rewrites the
+plugin header docblock and the `YAMD_VERSION` constant from `package.json` and
+stages the plugin file, so all three stay in step inside npm's version commit and
+tag. Do not edit the three by hand.

@@ -140,6 +140,7 @@ Constraints worth knowing:
 - No database migrations. Deactivating the plugin leaves no residue except an
   expiring transient.
 
-> TODO (confirm): whether the version bump in both `package.json` and the plugin
-> header docblock should stay a manual step. It has been manual for every release
-> so far.
+Versioning is automated. `npm version patch|minor|major` bumps `package.json`,
+then an npm `version` lifecycle script syncs the plugin header docblock and the
+`YAMD_VERSION` constant and stages the plugin file, so all three land in npm's
+version commit and tag together. Never edit the three by hand; they drift.

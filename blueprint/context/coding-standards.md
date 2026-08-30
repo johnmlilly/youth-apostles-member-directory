@@ -77,8 +77,9 @@ Follow WordPress PHP coding standards, which is what the existing files do.
 - Read the generated `build/index.asset.php` for dependencies and the version
   hash; bail early if it is missing, since that means the build has not been run
 - Pass PHP values to JS through `wp_localize_script`, not inline script tags
-- Bump the version in three places together when releasing: the plugin header
-  docblock, the `YAMD_VERSION` constant, and `package.json`
+- Release with `npm version patch|minor|major`. The `version` lifecycle script
+  syncs the plugin header docblock and `YAMD_VERSION` from `package.json`. Never
+  hand-edit the three; `scripts/sync-version.mjs` owns them.
 
 ## Styling
 
