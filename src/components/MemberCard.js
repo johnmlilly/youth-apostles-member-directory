@@ -31,10 +31,6 @@ function formatDate( dateStr ) {
 }
 
 export default function MemberCard( { member } ) {
-	// The REST controller may expose this as either key depending on how
-	// the CiviCRM membership field is mapped — accept both.
-	const membership = member.membership_type || member.membership || '';
-
 	const [ isDetailsOpen, setIsDetailsOpen ] = useState( false );
 
 	const address = member.address || {};
@@ -55,8 +51,8 @@ export default function MemberCard( { member } ) {
 
 			<h3 className="yamd-name">{ member.display_name }</h3>
 
-			{ membership && (
-				<p className="yamd-membership">{ membership }</p>
+			{ member.membership_type && (
+				<p className="yamd-membership">{ member.membership_type }</p>
 			) }
 
 			<div className="yamd-contact">
