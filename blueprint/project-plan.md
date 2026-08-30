@@ -61,7 +61,7 @@ Read from CiviCRM per member:
 
 | Entity | Fields used |
 |---|---|
-| `Contact` | id, display_name, first_name, last_name, job_title, image_URL |
+| `Contact` | id, display_name, first_name, last_name, image_URL |
 | `Email` / `Phone` | primary address and number (LEFT joins) |
 | `Address` | street, supplemental line, city, state, postal code, country (primary only) |
 | `Membership` | membership type label, join_date, end_date (active statuses only) |
@@ -69,6 +69,12 @@ Read from CiviCRM per member:
 
 The only persisted state is a WordPress transient, `yamd_members_cache`, holding
 the assembled member list for 5 minutes.
+
+That 5 minute lag is accepted, not an oversight. There is no cache purge hook, so
+an edit made in CiviCRM can take up to 5 minutes to show in the directory. A
+directory is a reference, not a live feed, and the transient is what keeps repeat
+page loads from re-querying CiviCRM every time. Lower the TTL temporarily while
+testing against real data.
 
 Not yet mapped, and named in the build plan: chapter, vocation, community status,
 community name. These are CiviCRM custom fields whose exact API names still need

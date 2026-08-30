@@ -43,11 +43,14 @@ under `blueprint/history/features/`. The dated notes in
   test gate
 - [ ] 8. **Chapter custom field** - map the CiviCRM chapter custom field, display
   it on `MemberCard`, and let it drive a filter dropdown. Scaffolding already
-  exists as commented-out lines in the REST controller; this needs the real
-  API4 field name and a test against live data.
+  exists as commented-out lines in the REST controller.
+  **First step: find the real field name in CiviCRM > Support > API4 Explorer.**
+  It will look like `GroupName.FieldName`, and nothing else in this item can start
+  until it is known. Test against live data before checking this off.
 - [ ] 9. **Vocation and community fields** - display vocation (married,
-  consecrated, and so on), community status, and community name. Never wired;
-  the underlying CiviCRM fields still need to be identified.
+  consecrated, and so on), community status, and community name. Never wired.
+  **First step: identify all three fields in CiviCRM > Support > API4 Explorer.**
+  Same blocker as item 8, and worth doing in the same sitting.
 - [ ] 10. **Member photo loading** - photos load slowly today. Show a placeholder
   until each image resolves, eagerly load only the first 9-12, and lazy-load the
   rest.
