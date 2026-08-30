@@ -1,2 +1,5 @@
 node_modules/
 build/
+
+# macOS Finder metadata
+.DS_Store
