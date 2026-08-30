@@ -4,7 +4,8 @@
 	"private": true,
 	"scripts": {
 		"build": "wp-scripts build",
-		"start": "wp-scripts start"
+		"start": "wp-scripts start",
+		"version": "node scripts/sync-version.mjs && git add youth-apostles-member-directory.php"
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^30.0.0"
